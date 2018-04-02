@@ -159,7 +159,6 @@ sql_callback(void *r, int ncol, char **columns, char **values)
 int 
 main(int argc, char *argv[])
 {
-    int c;
     char gcc[] = "/usr/bin/gcc";
 
     char query[512];
@@ -184,8 +183,12 @@ main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
     
-    // Check if table exists - otherwise create 
-    if(sqlite3_exec(db, "SELECT * FROM rules LIMIT 1", NULL, NULL, (char **)NULL)){
+    // Tries to load database - otherwise create one
+    if(sqlite3_exec(db, "SELECT * FROM rules", sql_callback,(void *)&rules, (char **)NULL)){
+
+        LOG("zm: could not execute query");
+        LOG("SELECT * FROM rules");
+        LOG("Create database .zm.db");
 
         // Create database
         if(sqlite3_exec(db,
@@ -199,27 +202,6 @@ main(int argc, char *argv[])
         }
     }
 
-    // Load the database
-    if(sqlite3_exec(db, "SELECT * FROM rules", sql_callback,(void *)&rules, (char **)NULL)){
-        LOG("zm: could not execute query");
-        LOG("SELECT * FROM rules");
-    }
-    if(argc == 2 && !strcmp("-list", argv[1])) {
-        int c = 0;     
-        foreach((void *)rules, (void *)&c, print_rule);
-        return EXIT_SUCCESS;
-    }
-
-    if(argc == 2 && !strcmp("-purge", argv[1])) {
-        return remove(".zm.db");
-    }
-
-    if(argc == 3 && !strcmp("-delete", argv[1])) {
-        int c = atoi(argv[2]);     
-        foreach((void *)rules, (void *)&c, delete_rule);
-        return EXIT_SUCCESS;
-    }
-
     // Make mode
     if(argc == 1){
 
@@ -228,10 +210,28 @@ main(int argc, char *argv[])
     // Compile mode
     }else{
 
+        int c;
+
         char *cfile;
         char *ofile;
 
         cfile = ofile = (char *)NULL;
+
+        if(argc == 2 && !strcmp("-list", argv[1])) {
+            c = 0;     
+            foreach((void *)rules, (void *)&c, print_rule);
+            return EXIT_SUCCESS;
+        }
+
+        if(argc == 2 && !strcmp("-purge", argv[1])) {
+            return remove(".zm.db");
+        }
+
+        if(argc == 3 && !strcmp("-delete", argv[1])) {
+            c = atoi(argv[2]);     
+            foreach((void *)rules, (void *)&c, delete_rule);
+            return EXIT_SUCCESS;
+        }
 
         for(c = 1; c < argc; c++) {
             if(strstr(argv[c], ".c") != (char *)NULL || strstr(argv[c], ".C") != (char *)NULL)

@@ -200,15 +200,9 @@ main(int argc, char *argv[])
     }
 
     // Load the database
-    if( snprintf(query, 512, 
-        "SELECT * FROM rules") < 0) {
-        LOG("m: could not execute query:");
-        LOG(query);
-    }
-
-    if(sqlite3_exec(db, query, sql_callback,(void *)&rules, (char **)NULL)){
+    if(sqlite3_exec(db, "SELECT * FROM rules", sql_callback,(void *)&rules, (char **)NULL)){
         LOG("zm: could not execute query");
-        LOG(query);
+        LOG("SELECT * FROM rules");
     }
     if(argc == 2 && !strcmp("-list", argv[1])) {
         int c = 0;     
